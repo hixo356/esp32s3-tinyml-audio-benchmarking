@@ -4,6 +4,7 @@
 #include "esp_heap_caps.h"
 #include "esp_dsp.h"
 #include "esp_check.h"
+#include "mel_data.h"
 
 static const char* TAG = "PREPROCESSOR";
 
@@ -29,7 +30,7 @@ esp_err_t Preprocessor::init(){
     return ESP_OK;
 }
 
-void Preprocessor::process_frame(int16_t* input_raw, float* output){
+void Preprocessor::process_frame(int16_t* input_raw, float* output_mel){
     for (int i=0; i<m_fft_size; i++){
         float val = ((float)input_raw[i] / 32768.0f) * m_window_coeffs[i];
 
@@ -40,12 +41,22 @@ void Preprocessor::process_frame(int16_t* input_raw, float* output){
     dsps_fft2r_fc32(m_fft_buffer, m_fft_size);
     dsps_bit_rev_fc32(m_fft_buffer, m_fft_size);
 
+    float power_spectrum[GENERATED_MEL_FFT_SIZE / 2 + 1];
     for (int i=0; i<m_fft_size / 2; i++){
         float re = m_fft_buffer[i * 2 + 0];
         float im = m_fft_buffer[i * 2 + 1];
 
-        float power = (re * re) + (im * im);
+        power_spectrum[i] = (re * re) + (im * im);
+    }
 
-        output[i] = 10.0f * log10f(power + 1e-10f);
+    for (int m = 0; m < GENERATED_MEL_BINS; m++) {
+        float mel_energy = 0.0f;
+        
+        for (int f = 0; f <= m_fft_size / 2; f++) {
+            mel_energy += power_spectrum[f] * mel_filterbank[m][f];
+        }
+        
+        // Zapis do bufora wyjściowego (rozmiar: MEL_BINS)
+        output_mel[m] = 10.0f * log10f(mel_energy + 1e-10f);
     }
 }

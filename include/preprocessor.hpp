@@ -13,7 +13,7 @@ class Preprocessor{
         ~Preprocessor();    
         
         esp_err_t init();
-        void process_frame(int16_t* input_raw, float* output);
+        void process_frame(int16_t* input_raw, float* output_mel);
 
         
 };
