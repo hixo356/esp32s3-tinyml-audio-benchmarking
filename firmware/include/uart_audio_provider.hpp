@@ -2,7 +2,7 @@
 
 #include "driver/uart.h"
 #include "freertos/ringbuf.h"
-#include "app_config.h"
+#include "config_ml.h"
 
 #define TAG "uart_audio_provider"
 
