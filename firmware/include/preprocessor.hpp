@@ -8,6 +8,9 @@ class Preprocessor{
         size_t m_fft_size;
         float* m_window_coeffs;
         float* m_fft_buffer;
+
+        // internal buffer to keep one full window at all times
+        int16_t m_internal_audio_buffer[ML_WINDOW_SAMPLES] = {0};
     public:
         Preprocessor(size_t fft_size = 512);
         ~Preprocessor();    

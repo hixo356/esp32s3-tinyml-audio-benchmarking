@@ -30,9 +30,20 @@ esp_err_t Preprocessor::init(){
     return ESP_OK;
 }
 
-void Preprocessor::process_frame(int16_t* input_raw, float* output_mel){
-    for (int i=0; i<m_fft_size; i++){
-        float val = ((float)input_raw[i] / 32768.0f) * m_window_coeffs[i];
+/*
+    returns ONE log-mel spectrogram COLUMN into output_mel
+*/
+void Preprocessor::process_frame(int16_t* new_stride_data, float* output_mel){
+    size_t overlap_samples = ML_WINDOW_SAMPLES - ML_STRIDE_SAMPLES;
+
+    // moving old data to the left (maintaining overlap)
+    memmove(m_internal_audio_buffer, m_internal_audio_buffer + ML_STRIDE_SAMPLES, overlap_samples * sizeof(int16_t));
+
+    // adding new data at the end of the buffer 
+    memcpy(m_internal_audio_buffer + overlap_samples, new_stride_data, ML_STRIDE_SAMPLES * sizeof(int16_t));
+    
+    for (int i = 0; i < m_fft_size; i++){
+        float val = ((float)m_internal_audio_buffer[i] / 32768.0f) * m_window_coeffs[i];
 
         m_fft_buffer[i * 2 + 0] = val;
         m_fft_buffer[i * 2 + 1] = 0.0f;
@@ -42,7 +53,7 @@ void Preprocessor::process_frame(int16_t* input_raw, float* output_mel){
     dsps_bit_rev_fc32(m_fft_buffer, m_fft_size);
 
     float power_spectrum[GENERATED_MEL_FFT_SIZE / 2 + 1];
-    for (int i=0; i<m_fft_size / 2; i++){
+    for (int i = 0; i < m_fft_size / 2; i++){
         float re = m_fft_buffer[i * 2 + 0];
         float im = m_fft_buffer[i * 2 + 1];
 

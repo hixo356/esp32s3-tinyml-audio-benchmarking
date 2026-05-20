@@ -5,7 +5,7 @@ import os
 def run_mel_gen():
     # print("\n--- [Custom] Running Mel Filterbank Generator ---")
     try:
-        subprocess.run(["python", "gen_mel.py"], check=True)
+        subprocess.run(["python", "generate_mel.py"], check=True)
         # print("--- [Custom] Mel Data Header Updated Successfully ---\n")
     except Exception as e:
         # print(f"--- [Custom] ERROR: Could not run gen_mel.py: {e} ---\n")
