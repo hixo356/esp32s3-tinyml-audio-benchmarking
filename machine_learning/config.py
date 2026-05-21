@@ -5,11 +5,11 @@ class DSPConfig:
     audio_sample_rate: int = 16000
     audio_channels: int = 1
 
-    ml_window_size_ms: int = 1000
-    ml_stride_size_ms: int = 200
+    ml_window_size_ms: int = 40
+    ml_stride_size_ms: int = 20
 
-    fft_size: int = 512
-    fft_hop_size: int = 256  # 50% overlap
+    fft_size: int = 1024
+    fft_hop_size: int = 512  # 50% overlap
     mel_bins: int = 40
 
     @property
