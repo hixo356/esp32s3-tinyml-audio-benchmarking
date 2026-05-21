@@ -1,9 +1,11 @@
 #include "uart_audio_provider.hpp"
 #include <esp_check.h>
 
+UARTAudioProvider::UARTAudioProvider(){}
+
 esp_err_t UARTAudioProvider::init(){
     size_t rb_size = ML_WINDOW_SAMPLES * 2 *sizeof(int16_t);
-    rb_handle = xRingbufferCreate(rb_size, RINGBUF_TYPE_NOSPLIT);
+    rb_handle = xRingbufferCreate(rb_size, RINGBUF_TYPE_BYTEBUF);
     if(rb_handle == nullptr){
         return ESP_ERR_NO_MEM;
     }
@@ -21,7 +23,7 @@ esp_err_t UARTAudioProvider::init(){
 
     ESP_RETURN_ON_ERROR(uart_set_pin(UART_PORT_NUM, UART_TX_PIN, UART_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE), TAG, "UART Pin Fail");
 
-    ESP_RETURN_ON_ERROR(uart_driver_install(UART_PORT_NUM, 1024, 0, 0, NULL, 0), TAG, "UART Driver Fail");
+    ESP_RETURN_ON_ERROR(uart_driver_install(UART_PORT_NUM, 1024 * 2, 0, 0, NULL, 0), TAG, "UART Driver Fail");
 
     return ESP_OK;
 }
@@ -29,18 +31,20 @@ esp_err_t UARTAudioProvider::init(){
 void UARTAudioProvider::readDataStream(SemaphoreHandle_t data_ready_sem){
     uint8_t tmp_buf[256];
 
-    int length = uart_read_bytes(UART_NUM_1, tmp_buf, sizeof(tmp_buf), 10/portTICK_PERIOD_MS);
+    int length = uart_read_bytes(UART_PORT_NUM, tmp_buf, sizeof(tmp_buf), 10/portTICK_PERIOD_MS);
 
     if(length > 0){
         xRingbufferSend(this->rb_handle, tmp_buf, length, 0);
 
         samples_counter += (length/2);
 
-        if(samples_counter >= ML_STRIDE_SAMPLES){
+        // if(samples_counter >= ML_STRIDE_SAMPLES){
             xSemaphoreGive(data_ready_sem);
-            samples_counter = 0;
-        }
+            // samples_counter = 0;
+        // }
     }
+
+    vTaskDelay(10);
 }
 
 void* UARTAudioProvider::getLatestWindow(size_t* retrieved_size) {
